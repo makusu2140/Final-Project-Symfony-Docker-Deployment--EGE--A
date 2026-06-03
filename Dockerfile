@@ -24,7 +24,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 # Create necessary directories and set permissions for Symfony caches
-RUN mkdir -p /run/nginx && \
+RUN mkdir -p /run/nginx /var/www/html/var && \
     chown -R www-data:www-data /var/www/html/var
 
 # Move Nginx settings into place
