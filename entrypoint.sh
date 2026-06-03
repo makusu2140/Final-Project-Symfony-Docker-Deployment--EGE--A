@@ -6,19 +6,32 @@ php bin/console cache:clear --env=prod
 php bin/console cache:warmup --env=prod
 
 echo "==> Waiting for cloud database to become accessible..."
-# This loop uses PHP to ping the MySQL database. 
-# It will retry every 3 seconds until the connection succeeds.
+# This attempts an actual low-level PDO connection using your injected DATABASE_URL.
+# If it fails, it catches the exception, waits 3 seconds, and tries again.
 until php -r "
 try {
-    \$url = parse_url(getenv('DATABASE_URL'));
-    \$host = \$url['host'];
-    \$port = isset(\$url['port']) ? \$url['port'] : 3306;
-    \$fd = @fsockopen(\$host, \$port, \$errno, \$errstr, 2);
-    if (\$fd) { fclose(\$fd); exit(0); }
-} catch (Exception \$e) {}
-exit(1);
+    \$dsn = getenv('DATABASE_URL');
+    if (!\$dsn) { exit(1); }
+    
+    // Convert a standard mysql:// URL structure to a valid PHP PDO connection string
+    \$dbparts = parse_url(\$dsn);
+    if (!isset(\$dbparts['host'])) {
+        // Fallback if parse_url struggles: try direct PDO attempt via string manipulation
+        \$dsn = str_replace('mysql://', 'mysql:dns=', \$dsn);
+    }
+    
+    // Instantiating a connection will throw an exception if the server isn't ready
+    \$pdo = new PDO(getenv('DATABASE_URL'));
+    exit(0);
+} catch (Exception \$e) {
+    // If the error is just 'Database doesn't exist' or 'Access denied', the server IS up!
+    if (strpos(\$e->getMessage(), '1049') !== false || strpos(\$e->getMessage(), '1045') !== false) {
+        exit(0);
+    }
+    exit(1);
+}
 " 2>/dev/null; do
-    echo "    --> Database is still initializing. Retrying in 3 seconds..."
+    echo "    --> Database port or server is still initializing. Retrying in 3 seconds..."
     sleep 3
 done
 
