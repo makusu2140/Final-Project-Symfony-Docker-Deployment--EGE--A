@@ -8,8 +8,11 @@ chown -R www-data:www-data /var/www/html
 echo "==> Hard clearing cached build remnants..."
 rm -rf /var/www/html/var/cache/*
 
+echo "==> Installing missing AssetMapper vendor assets..."
+# THE GOLDEN FIX: This downloads and sets up @hotwired/stimulus and friends
+php bin/console importmap:install
+
 echo "==> Compiling and warming up production cache..."
-# This forces Symfony to build its routing table using Railway variables
 php bin/console cache:warmup --env=prod
 
 echo "==> Purging default Nginx configuration structures..."
