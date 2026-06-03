@@ -3,17 +3,16 @@ set -e
 
 echo "==> Preparing production runtime directories and permissions..."
 mkdir -p /var/www/html/var/cache /var/www/html/var/log /etc/nginx/conf.d /run/nginx
-
-# THE GOLDEN FIX: Recursively give ownership of the whole project to the web user
 chown -R www-data:www-data /var/www/html
 
-echo "==> Purging all default Nginx configuration directories..."
-rm -f /etc/nginx/conf.d/*
-rm -f /etc/nginx/sites-enabled/*
-rm -f /etc/nginx/sites-available/*
+echo "==> Purging default Nginx configuration structures..."
+rm -rf /etc/nginx/conf.d/*
+rm -rf /etc/nginx/sites-enabled/*
+rm -rf /etc/nginx/sites-available/*
 
-echo "==> Injecting custom Nginx rules..."
-cp nginx-main.conf /etc/nginx/conf.d/default.conf
+echo "==> Overwriting master Nginx configuration..."
+# This replaces the master config file directly!
+cp nginx-production.conf /etc/nginx/nginx.conf
 
 # Find the exact PHP-FPM binary name dynamically
 FPM_BIN=$(which php-fpm || which php-fpm8.3 || which php-fpm8.2 || which php-fpm8.1 || find /usr/sbin /usr/bin -name "php-fpm*" | head -n 1)
