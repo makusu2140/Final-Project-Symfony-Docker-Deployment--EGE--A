@@ -5,9 +5,14 @@ echo "==> Preparing production runtime directories..."
 mkdir -p /var/www/html/var/cache /var/www/html/var/log /etc/nginx/conf.d /run/nginx
 chown -R www-data:www-data /var/www/html/var
 
-echo "==> Purging default configuration conflicts and injecting custom Nginx rules..."
-# Remove any default configs that are overriding your rules!
+echo "==> Purging all default Nginx configuration directories..."
+# Clear out conf.d rules
 rm -f /etc/nginx/conf.d/*
+# Clear out site-enabled / site-available fallbacks completely!
+rm -f /etc/nginx/sites-enabled/*
+rm -f /etc/nginx/sites-available/*
+
+echo "==> Injecting custom Nginx rules..."
 cp nginx-main.conf /etc/nginx/conf.d/default.conf
 
 # Find the exact PHP-FPM binary name dynamically
