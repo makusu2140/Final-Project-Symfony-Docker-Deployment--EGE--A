@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-echo "==> Preparing production runtime directories..."
+echo "==> Preparing production runtime directories and permissions..."
 mkdir -p /var/www/html/var/cache /var/www/html/var/log /etc/nginx/conf.d /run/nginx
-chown -R www-data:www-data /var/www/html/var
+
+# THE GOLDEN FIX: Recursively give ownership of the whole project to the web user
+chown -R www-data:www-data /var/www/html
 
 echo "==> Purging all default Nginx configuration directories..."
-# Clear out conf.d rules
 rm -f /etc/nginx/conf.d/*
-# Clear out site-enabled / site-available fallbacks completely!
 rm -f /etc/nginx/sites-enabled/*
 rm -f /etc/nginx/sites-available/*
 
@@ -24,7 +24,7 @@ find /etc/ -name "www.conf" -exec sed -i 's|^listen = .*|listen = 127.0.0.1:9000
 echo "==> Force running pending database migrations..."
 php bin/console doctrine:migrations:migrate --no-interaction --env=prod || echo "⚠️ Migration skipped or DB connection pending."
 
-echo "==> Starting PHP-FPM daemon with explicit execution permissions..."
+echo "==> Starting PHP-FPM daemon..."
 $FPM_BIN -d "listen=127.0.0.1:9000" -d "security.limit_extensions=.php" -D
 
 echo "==> Starting Nginx Web Server..."
